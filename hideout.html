@@ -88,15 +88,14 @@
             <div class="site-section pb-0">
                 <div class="container">
                     <div class="row align-items-stretch">
-                        <div class="col-md-8">
-                            <iframe style="width: 100%;height: 100%;" class="img-fluid" data-aos="fade-up" src="https://www.youtube.com/embed/LvygbXA7hXk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                            <h2 data-aos="fade-up">Work In Progress. Release July 2021</h2>
+                        <div class="col-md-8" data-aos="fade-up" >
+                            <iframe style="width: 100%;height: 100%;" class="img-fluid" src="https://www.youtube.com/embed/Rb5GtVZG4P0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             <!--<img src="img/sofa_gif.gif" alt="Metro engine" class="img-fluid">-->
                         </div>
                         <div class="col-md-3 ml-auto" data-aos="fade-up" data-aos-delay="100">
                             <div class="sticky-content">
                                 <h3 class="h3">HIDEOUT</h3>
-                                <p class="mb-4"><span class="text-muted">Graphics Programming</span></p>
+                                <p class="mb-4"><span class="text-muted">Unreal Engine 4</span></p>
 
                                 <div class="mb-5">
                                     <p>
@@ -110,9 +109,9 @@
                                 <h4 class="h4 mb-3">What I did</h4>
                                 <p>
                                     In this project, I coordinated the programmers team, scheduling and reviewing tasks during the development
-                                    to reach deadlines.
+                                    to reach deadlines (aside of implementing many gameplay and sound features I will explain in next section).
                                 </p>
-				<div class="row">
+				                <div class="row">
                                     <p class="col"><a href="https://store.steampowered.com/app/1659400/" class="readmore">See in Steam</a></p>
                                 </div>
                             </div>
@@ -122,10 +121,218 @@
             </div>
             <br />
             <br />
-            <div class="site-section pb-0">
-                <div class="container" data-aos="fade-up">
+            <div class="site-section pb-0"data-aos="fade-up">
+                <div class="container">
+                    <br />
+                    <h3>Implemented Features</h3>
+                    <p>Beyond the design of the first level layout and blocking, I have implemented many features during the project development process.</p>
+                    <br />
+                    <h4>Interactables System</h4>
                     <p>
+                        All interactables (object in the world with which the player can interact someway, like an obstacle to climb it or a button top press it and activate something)
+                        are based in a single class called <b>InteractableBase</b>, which has all the base functionality that all the interactables share.
+                        This system is based in inheritance, and each type of interactable override certain functionalities to fit the base
+                        approach to its own needs.<br />
+                    </p>
+                    <h5>Base functionality</h5>
+                    <p>
+                        Let's explain what do this kind of objects do. An interactable has its <b>Tick</b> disables, until the player's detection sphere collides with him. Once this happens
+                        the objects asks for an icon and saves its reference. On the Tick (now activated) we check if there is a wall or a blocking object between the interactable and the player,
+                        if so, it can not show its icon and let the player interact (this is the case when the interactable is behind a wall, for example). After that, the function <b>ShouldIShowInfo</b>
+                        is called, which brings the posibility of customizing a condition for the object to show its icon (in the case of obstacles, you have to be facing the wall to be able to climb,
+                        but you can not climb if you are on a corner, so the obstacle will be responsible of overriding this function and bring that additional check).<br />
+                        If those conditions passed now we can call <b>ShowInfo</b> to show the saved icon on the screen, and to achieve this we have to call a function that projects 3D coordinates to
+                        screen coordinates (we are talking about how the icons work in the next section). Now that it is showing its icon, assuming it is on range an all the conditions that it has we need
+                        the player's input to receive the signal and do something. In the case of <b>PickUps</b>, when we receive the signal we will add ourselves to the player's inventory (Instigator of the action).
+                    </p>
+                    <h5>Icons</h5>
+                    <p>
+                        Icons are created and initialized as <b>UCustomImages</b>, that have an extra bool called <b>bIsTaken_</b>, that will determine if it is free to use (when someone asks for an icon) or not. When
+                        any object ask for an icon, we return the first that is free and mark it as taken.<br />
+                        We have a pool of this special blank images created at the beginning, so we have a pool already prepared. They are blank, so when a class asks for an icon, it is responsible of put on it the image
+                        that it needs (thing that is directly related to the input device we are using, to show the button 'E' in the case of interactables, for example). How do I handle that?<br />
+                        I have an special event on the main character controller to send a message to everyone who is listening when the input device changed. I have a function called <b>IsAnyKeyPressed</b> so when any key
+                        is pressed I check if it comes from a keyboard or from a gamepad, comparing it to my previous record of which input device is the player currently using, if it differs, the input device has
+                        changed and I have to update that precious mentioned record and broadcast an event that warns listeners of this and says if the device is now a keyboard or not.<br />
+                        When a class initializes an icon, it calls a function of the <b>Game Instance</b> called <b>GetIconFromAction</b>. This function has an "action" as a parameter, which can be <i>Interact</i>, <i>Jump</i> or similars,
+                        so the function returns the texture of the desired icon taking into account which input device is now the player using, that way we have the icon up to day and matches the device. This function is called from every
+                        listener when the input device changes, so the function will return the icon of the new device also. This allows hotswap of input device and icons at any moment without artifacts.
+                    </p>
+                    <h5>Types</h5>
+                    <div class="row align-items-stretch" data-aos="fade-up">
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/InteractGenerator.webm" type="video/webm">
+                                <source src="img/HIDEOUT/InteractGenerator.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Interactable that activates something activable. (Powers a button here)</b></p>
+                        </div>
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/InteractDoor.webm" type="video/webm">
+                                <source src="img/HIDEOUT/InteractDoor.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Interactable that activates something activable. (A door here)</b></p>
+                        </div>
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/Material.webm" type="video/webm">
+                                <source src="img/HIDEOUT/Material.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Interactable pick up. Material to craft.</b></p>
+                        </div>
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/Collectable.webm" type="video/webm">
+                                <source src="img/HIDEOUT/Collectable.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Interactable collectable. Like a pick up but triggering a special pop up.</b></p>
+                        </div>
+                    </div>
+                    <!-------------------------------------------------------------------------------------------------->
+                    <div class="row align-items-stretch" data-aos="fade-up">
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/Climb.webm" type="video/webm">
+                                <source src="img/HIDEOUT/Climb.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Obstacle. (Tall enough to climb)</b></p>
+                        </div>
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/Vault.webm" type="video/webm">
+                                <source src="img/HIDEOUT/Vault.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Obstacle. (Small, vault)</b></p>
+                        </div>
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/Locker.webm" type="video/webm">
+                                <source src="img/HIDEOUT/Locker.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Hidespot. (Vertical, locker)</b></p>
+                        </div>
+                        <div class="col-md-3">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/HidespotHorizontal.webm" type="video/webm">
+                                <source src="img/HIDEOUT/HidespotHorizontal.mp4" type="video/mp4">
+                            </video>
+                            <p><b>Hidespot. (Horizontal, bed)</b></p>
+                        </div>
+                    </div>
+                    <p>
+                        Aside of the system itself, I have implemented all their functionalities. Also, activables like the Garage Door
+                        seen above in the second gif was also implemented by me.
+                    </p>
+                    <br />
+                    <br />
+                    <h4>Player Camera System</h4>
+                    <p>
+                        The camera of a game is extremmely important, as it is the eyes of the player. It has to transmit the sensations we are looking for:
+                        frenetism when running, protection when crouching and similars. For that, the camera in our game is always moving towards a target position (unless it
+                        is already in placed in the target position). To move the camera smoothly to somewhere we just have to move the target position and that's all, camera will make a transition
+                        to that location. The same occurs with the Field of View.<br />
+                        This is what happens when player does some actions:
+                    </p>
+                    <ul class="list-unstyled list-line mb-5">
+                        <li>Crouching. Camera lowers its height, goes closer to the player's back and lowers its fov.</li>
+                        <li>
+                            Running. Camera goes a bit higher, moves further from the player's back and increases its fov (this is a more
+                            subtle effect than when crouching).
+                        </li>
+                        <li>
+                            Change Shoulder. Player can change the camera side and choose where to place it depending on the situation,
+                            left or right (to see better from corners, for example).
+                        </li>
 
+                    </ul>
+                    <br />
+                    <br />
+                    <h4>Camera Landmark Focus</h4>
+                    <div class="row align-items-stretch" data-aos="fade-up">
+                        <div class="col-md-5">
+                            <p>
+                                In our game, when we want to highlight a building or something similar to guide the player, we trigger a Camera
+                                Landmark Focus so the player hears a characteristic sound and sees a button to press in the bottom-left corner. <br />
+                                If the player presses the button, the camera will fix the desired landmark position as the place to look. Player is able to move
+                                while this is happening, but slower, and camera FOV is lowered to transmit the "focus on that thing" sensation.<br />
+                                This effect is voluntary, so if hte player do not press anything, you won't be forced to look there. The effect
+                                ends past certain time or exiting the trigger volume for better control purposes.
+                            </p>
+                        </div>
+                        <div class="col-md-7">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/FocusCamr.webm" type="video/webm">
+                                <source src="img/HIDEOUT/FocusCamr.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <br />
+                    <br />
+                    <h4>Subtitles System</h4>
+                    <p>
+                        In a game like ours we need a way to play monologues of the main character and voices in general, and for a better
+                        understanding we needed subtitles.
+                    </p>
+                    <h5>Subtitle block Handler</h5>
+                    <p>
+                        A Subtitle Block Handler is an object that has all the necessary info of what is needed in a set of subtitles (a monologue).
+                        To create one we have to make a Blueprint inheriting of our <b>SubtitleBlockHandler</b> class and fill the vector of
+                        <b>SubtitleLines</b> with the pertinent information.<br />
+                        Each <b>SubtitleLine</b> has an Audio Source, a string for the text and a float value for the line time.
+                    </p>
+                    <h5>Subtitles System itself</h5>
+                    <p>
+                        The system receives a <b>SubtitleBlockHandler</b> and starts playing it line by line. If another subtitle is thrown to the
+                        system to be played, it will wait until the last line of the current one has ended, and then will start.<br />
+                        There are also events at the end of each block to let designers attach a mission update, a door opening or something scripted in the
+                        <b>Level Script</b>.
+                    </p>
+                    <br />
+                    <br />
+                    <h4>Loading screen and asynchronous level loading</h4>
+                    <div class="row align-items-stretch" data-aos="fade-up">
+                        <div class="col-md-5">
+                            <p>
+                                When we start a level an interactive loading screen is shown, and we can rotate the character model (randomly selected
+                                from all the characters in the game, including enemies), while the game loads in the background so you do not get bored
+                                watching a circle rotating. <br />
+                                When everything is loaded, the loading circle gif changes to a line that says "Press [button]
+                                to continue", this [button] changes with the input device thanks to the before mentioned icons system.<br />
+                                Player input is blocked until that momento so there are no problems when spawning and to avoid potential artifacts.
+                            </p>
+                        </div>
+                        <div class="col-md-7">
+                            <video autoplay loop muted playsinline class="img-fluid">
+                                <source src="img/HIDEOUT/LoadingScreen.webm" type="video/webm">
+                                <source src="img/HIDEOUT/LoadingScreen.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <h4>Sound System</h4>
+                    <p>
+                        Sound is pretty important in this kind of games, and due to that the sound system has to be versatile and robust. We use both
+                        <b>.wav</b> files and FMOD Events to manage sounds. <br />
+                        We can separate Sound Effects from the BSO because they work different:
+                    </p>
+                    <h5>SFX</h5>
+                    <p>
+                        Sound effects work as request in a database in our project. We have a library that has all the sounds storaged,
+                        and it is accesible from the <b>Game Instance</b>. To play, pause or stop a sound, you have to call the function
+                        placed in the <b>Game Instance</b> passing as a parameter its unique identifier (name) and, optionally, a location
+                        to play it in spatialized.<br/>
+                        To storage a sound we must provide a name (ID), an audio source (AudioWave or FMOD Event) and a channel to play it.
+                        The channel is required to control its volume through options (sound effect, music, dialogues, etc).
+                    </p>
+
+                    <h5>BSO</h5>
+                    <p>
+                        The BSO is FMOD-based and that is important because we have to be able to modify it dynamically. We have a layering system,
+                        and we activate and deactivate layers in the FMOD Event depending on the intensity of the situation that the player is facing.
+                        An example is: if player starts being chased by enemies this parameter changes and layers with percusion and bass boost are faded in.
+                        This is very useful, as the sound affects a lot the player and can help making him nervious or relaxed, depending on what we want.<br />
+                        We use this parametrization in other sound areas like the player's heartbeat, which becomes louder and faster when he is in danger and 
+                        softer when he has no trouble near.
                     </p>
                 </div>
             </div>

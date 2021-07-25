@@ -278,33 +278,113 @@
                         We need to trace a Ray in a direction, get the hit data, and save it in a certain Texture Coordinate but
                         how can we do that conversion from 3 dimensional vector (direction) to a 2 dimensional one (UV)?
                         <b><a href="https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/">This link</a></b>
-                         exposes and approach.
+                        exposes and approach.
                     </p>
                 </div>
                 <div class="container">
                     <div class="row align-items-stretch">
-                        <div class="col-md-5 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                        <div class="col-md-7 ml-auto" data-aos="fade-up" data-aos-delay="100">
                             <div class="sticky-content">
                                 <p>
-                                    After having all the information ready, I sent it to GPU using Shader Storage Buffer Objects (SSBOs) and then implemented a BVH ray traversal
-                                    approach based on NanoRT's way of doing it.<br />
-                                    The first I obtained at trying to draw surface normals successfully (with some artifacts) was this:
+                                    This probe info compression consists in projecting the sphere to an octahedron, and then take its faces and unwrap them into a single plane.
+                                    This image illustrates the process:
                                 </p>
                             </div>
                         </div>
-                        <div class="col-md-7">
+                        <div class="col-md-5">
                             <div data-aos="fade-up">
-                                <img src="img/probes_compression.png" alt="Probes Encoding" />
+                                <img src="img/probes_compression.png" alt="Probes Encoding" class="img-fluid" />
                                 <!--<img src="img/first_raytracing.gif" alt="First GPU Ray Tracing results." class="img-fluid">-->
                             </div>
                         </div>
                     </div>
                 </div>
+                <div class="container" data-aos="fade-up">
+                    <h5>Tracing Results</h5>
+                    <p>
+                        Here are some examples of the results that I get tracing omnidirectionally from a single probe:
+                    </p>
+                    <div class="row align-items-stretch">
+                        <div class="col-md-3 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/probe_worldpos.png" alt="Probes WorldPos" class="img-fluid" />
+                            <p>World Position of Ray hits.</p>
+                        </div>
+                        <div class="col-md-3 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/probe_norm.png" alt="Probes Normals" class="img-fluid" />
+                            <p>World Normals of Ray hits.</p>
+                        </div>
+                        <div class="col-md-3 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/probe_light.png" alt="Probe light" class="img-fluid" />
+                            <p>Enlightened texture using previous info (Position and Normal) of Ray hits.</p>
+                        </div>
+                        <div class="col-md-3 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/probe_light_atlas.png" alt="Probe light atlas" class="img-fluid" />
+                            <p>Probe light info with a manual bilinear sampling applied (and a forced border for hardware bilinear sampling purposes).</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="container" data-aos="fade-up">
+                    <h5>Probe placement of previous results</h5>
+                    <p>
+                        Here is the probe situation from which the previous shown info was gathered:
+                    </p>
+                    <div class="row align-items-stretch">
+                        <div class="col-md-4 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/probe_env_0.png" alt="Probes Environment Capture 0" class="img-fluid" />
+                            <p>Perspective 0.</p>
+                        </div>
+                        <div class="col-md-4 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/probe_env_1.png" alt="Probes Environment Capture 1" class="img-fluid" />
+                            <p>Perspective 1.</p>
+                        </div>
+                        <div class="col-md-4 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/probe_env_2.png" alt="Probes Environment Capture 2" class="img-fluid" />
+                            <p>Perspective 2.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="container" data-aos="fade-up">
+                    <h4>Final result</h4>
+                    <h5>What happened?</h5>
+                    <p>
+                        After all this, I started placing thousands of probes in the world and the problem came when trying to blend their info to enlight a fragment. The data was not
+                        arriving fragments correctly, and I think is something with the way I compress data into the textures (although I have been trying LOTS of fixes and it is still not working).
+                        The results I got were these (I decided to stop the development here for reasons that I will explain later):
+
+                    </p>
+                    <div class="row align-items-stretch">
+                        <div class="col-md-6 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/final_indirect_0.png" alt="Indirect Lightning" class="img-fluid" />
+                            <p>Indirect Lightning of the first bounce in my Global illumination approach. Perspective 0.</p>
+                        </div>
+                        <div class="col-md-6 ml-auto" data-aos="fade-up" data-aos-delay="100">
+                            <img src="img/final_indirect_1.png" alt="Indirect Lightning" class="img-fluid" />
+                            <p>Indirect Lightning of the first bounce in my Global illumination approach. Perspective 1.</p>
+                        </div>
+                    </div>
+                    <p>As you see, there is indirect lightning but there are some artifacts (mainly black zones) when blending from the 8 closest probes.</p><br /><br />
+                    <h5>Am I continuing this approach in this engine?</h5>
+                    <p>
+                        The answer is no. <br />
+                        I was forced to stop developing Metro's Global Illumination for many reasons:<br />
+                        - The first is that I could not make this engine open source due to my College terms, and I wanted to do this for everyone to learn.<br />
+                        - The second one is that I had like 4 more College projects that where parallel to this one, and I concluded that with these results I was already happy.
+                        I had researched and developed for an entire month while working on the rest of projects so now it was time to leave this one a bit aside to end the rest
+                        as advanced as Metro.<br />
+                        - The last but not the least was a limitation of OpenGL. I have not managed to do asynchronous computations on the GPU, the Computing of the probes blocks the OpenGL context
+                        and so the rendering. This causes this technique to be useless for real-time simulations (it is designed for that and based on async computations so... bad news).<br /><br />
+                        But not everything is bad! Now that I ended College and all the projects are succssfully ended I am starting a Vulkan-based engine (API that does allow to do async compute on the GPU). As it is usually said,
+                        when a door closes a window is ready to be developed!
+                    </p>
+                </div><br /><br />
+                <div class="container" data-aos="fade-up">
+                    <h3>The End</h3>
+                    <p>Thanks for reading my post about Metro Engine and DDGI, I hope I motivated or helped you somehow in your development!<br /> Check <a href="https://twitter.com/SorianoDev">my twitter</a> out for news!</p>
+                </div>
             </div>
         </section>
-
-
     </main><!-- End #main -->
+
     <!-- ======= Footer ======= -->
     <footer class="footer" role="contentinfo">
         <div class="container">
